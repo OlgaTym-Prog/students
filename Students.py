@@ -1,114 +1,124 @@
+from typing import List, Dict
+
+
 class Student:
 
-    def __init__(self, name, surname, gender):
-        self.name = name
-        self.surname = surname
-        self.gender = gender
-        self.finished_courses = []
-        self.courses_in_progress = []
-        self.grades = {}
+    def __init__(self, name: str, surname: str, gender: str):
+        self.name: str = name
+        self.surname: str = surname
+        self.gender: str = gender
+        self.finished_courses: List[str] = []
+        self.courses_in_progress: List[str] = []
+        self.grades: Dict[str, List[int]] = {}
 
     # Метод выставления оценок лекторам
-    def rate_lecturer(self, lecturer, course, grade):
-        if (isinstance(lecturer, Lecturer) and course in self.courses_in_progress
-                and course in lecturer.courses_attached):
-            if course in lecturer.grades:
-                lecturer.grades[course] += [grade]
+    def rate_lecturer(self, lecturer: 'Lecturer', course: str, grade: int) -> None:
+        try:
+            if (isinstance(lecturer, Lecturer) and course in self.courses_in_progress
+                    and course in lecturer.courses_attached):
+                if course in lecturer.grades:
+                    lecturer.grades[course] += [grade]
+                else:
+                    lecturer.grades[course] = [grade]
             else:
-                lecturer.grades[course] = [grade]
-        else:
-            return 'Ошибка'
+                raise ValueError('Лектор не прикреплен к этому курсу или студент не изучает этот курс')
+        except Exception as ex:
+            print(f'Ошибка: {ex}')
 
     # Средняя оцнека
-    def _rate_average(self):
+    def _rate_average(self) -> float:
         total_grades = sum(sum(grades) for grades in self.grades.values())
         count_grades = sum(len(grades) for grades in self.grades.values())
-        return total_grades / count_grades if count_grades != 0 else 0
+        return total_grades / count_grades if count_grades != 0 else 0.0
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (f"Имя: {self.name}\nФамилия: {self.surname}"
                 f"\nСредняя оценка за лекции: {self._rate_average()}"
                 f"\nКурсы в процессе изучения: {', '.join(self.courses_in_progress)}"
                 f"\nЗавершенные курсы: {', '.join(self.finished_courses)}")
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'Student') -> bool:
         return self._rate_average() == other._rate_average()
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'Student') -> bool:
         return self._rate_average() < other._rate_average()
 
-    def __gt__(self, other):
+    def __gt__(self, other: 'Student') -> bool:
         return self._rate_average() > other._rate_average()
 
 
 class Mentor:
 
-    def __init__(self, name, surname):
-        self.name = name
-        self.surname = surname
-        self.courses_attached = []
+    def __init__(self, name: str, surname: str):
+        self.name: str = name
+        self.surname: str = surname
+        self.courses_attached: List[str] = []
 
 
 class Lecturer(Mentor):
 
-    def __init__(self, name, surname):
+    def __init__(self, name: str, surname: str):
         super().__init__(name, surname)
-        self.grades = {}
+        self.grades: Dict[str, List[int]] = {}
 
-    def _rate_average(self):
+    def _rate_average(self) -> float:
         total_grades = sum(sum(grades) for grades in self.grades.values())
         count_grades = sum(len(grades) for grades in self.grades.values())
-        return total_grades / count_grades if count_grades != 0 else 0
+        return total_grades / count_grades if count_grades != 0 else 0.0
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (f"Имя: {self.name}\nФамилия: {self.surname}"
                 f"\nСредняя оценка за лекции: {self._rate_average()}")
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'Lecturer') -> bool:
         return self._rate_average() == other._rate_average()
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'Lecturer') -> bool:
         return self._rate_average() < other._rate_average()
 
-    def __gt__(self, other):
+    def __gt__(self, other: 'Lecturer') -> bool:
         return self._rate_average() > other._rate_average()
 
 
 class Reviewer(Mentor):
 
-    def rate_hw(self, student, course, grade):
-        if isinstance(student, Student) and course in self.courses_attached and course in student.courses_in_progress:
-            if course in student.grades:
-                student.grades[course] += [grade]
+    def rate_hw(self, student: Student, course: str, grade: int) -> None:
+        try:
+            if (isinstance(student, Student) and course in self.courses_attached
+                    and course in student.courses_in_progress):
+                if course in student.grades:
+                    student.grades[course] += [grade]
+                else:
+                    student.grades[course] = [grade]
             else:
-                student.grades[course] = [grade]
-        else:
-            return 'Ошибка'
+                raise ValueError('Студент не изучает этот курс или курс не привязан к рецензенту')
+        except Exception as ex:
+            print(f'Ошибка: {ex}')
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Имя: {self.name}\nФамилия: {self.surname}"
 
 
 #  Функция для подсчета средней оценки за домашние задания по всем студентам в рамках конкретного курса
-def average_grade_for_course(students, course):
+def average_grade_for_course(students: List[Student], course: str) -> float:
     total_grades = 0
     count_grades = 0
     for student in students:
         if course in student.grades:
             total_grades += sum(student.grades[course])
             count_grades += len(student.grades[course])
-    return total_grades / count_grades if count_grades != 0 else 0
+    return total_grades / count_grades if count_grades != 0 else 0.0
 
 
 # Функция для подсчета средней оценки за лекции всех лекторов в рамках курса
-def average_lecture_grade_for_course(lecturers, course):
+def average_lecture_grade_for_course(lecturers: List[Lecturer], course: str) -> float:
     total_grades = 0
     count_grades = 0
     for lecturer in lecturers:
         if course in lecturer.grades:
             total_grades += sum(lecturer.grades[course])
             count_grades += len(lecturer.grades[course])
-    return total_grades / count_grades if count_grades != 0 else 0
+    return total_grades / count_grades if count_grades != 0 else 0.0
 
 
 student1 = Student('Ruoy', 'Eman', 'male')
